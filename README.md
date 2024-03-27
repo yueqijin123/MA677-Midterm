@@ -1,1 +1,1 @@
-# MA677-Midterm
+# MA677-Midterm Project
