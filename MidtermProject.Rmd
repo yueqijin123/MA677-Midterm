@@ -1,0 +1,293 @@
+---
+title: "MA677 MidtermProject"
+author: "Yueqi(Charlene) Jin"
+date: "2024-03-27"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(dplyr,ggplot2,gridExtra,markovchain,reshape2)
+```
+
+Based on the requirement of Prof. Haviland, I choose to answer the most interesting three problems from five topics: Irrigation Circles Problem, Order Statistics and Markov Chains, which resonate with me. And Prof.Haviland ever said:"Curiosity is the leavening of education. So, be curious and rise to the occasion!". I agreed with his opinion so much!
+
+## 1.Irrigation Circles Problem
+
+### Statistical Method
+
+#### Calculate the Mean Speed
+
+The average speed is calculated by dividing the circumference of the irrigation circle by the individual rotation times to give a speed for each rotation time. The average of these speeds provides a center value that is indicative of the overall speed at which the rotating arm is moving around the pivot axis.
+
+#### Standard Deviation and Standard Error
+
+The standard deviation measures the variation in these calculated velocities, providing insight into the extent to which the velocities differ from the average velocity. The standard error of the mean (SEM) is then calculated by dividing the standard deviation by the square root of the number of velocities, thus providing a measure of average velocity accuracy as an estimate of the true average velocity of the rotating arm.
+
+#### 90% Confidence Interval for the Mean Speed
+
+Using a t-distribution appropriate for the size of the sample, determine the 90% confidence interval for the average velocity. This interval represents the range within which the actual average speed of the rotating arm is expected to be 90% certain. The calculation takes into account the variability in speed and sample size and provides a statistical estimate of the possible deviation from the observed mean.
+
+#### Conversion from Rotation Time to Speed
+
+The conversion process involves the direct calculation of velocities based on recorded rotation times and known circumferences of irrigation circles, including arm lengths and end-gun extension lengths. The method focuses directly on velocities and eliminates the need to calculate rotation time confidence intervals, thus simplifying the process and providing practically relevant information directly to farmers and data scientists. The calculated average velocities and their confidence intervals provide valuable insights into the efficiency and performance of irrigation systems.
+
+```{r,echo=FALSE,eval = FALSE}
+rotation_times <- c(
+    21.80086, 23.74087, 24.6675, 22.1376, 21.4186,
+    23.80423, 23.11184, 24.23174, 24.826, 21.44181,
+    22.09314, 22.96205, 22.27362, 23.23669, 22.05037,
+    21.8075, 22.5501, 24.55148, 23.21969, 24.36872,
+    24.56083, 23.8828, 21.84536, 21.90287, 21.55993,
+    22.91966, 22.74965, 24.86386, 21.56766, 24.81992,
+    22.77892, 21.23745, 22.1006, 21.12459, 21.05793
+)
+
+arm_length <- 1420  
+speeds <- arm_length / rotation_times  
+
+mean_speed <- mean(speeds)
+sem <- sd(speeds) / sqrt(length(speeds))
+std_deviation <- sd(speeds)
+
+alpha <- 0.10  
+df <- length(speeds) - 1  
+t_value <- qt(1 - alpha/2, df)
+ci_lower <- mean_speed - t_value * sem
+ci_upper <- mean_speed + t_value * sem
+
+cat("Mean Speed: ", mean_speed, "feet per hour\n")
+cat("Standard Deviation: ", std_deviation, "feet per hour\n")
+cat("90% Confidence Interval: [", ci_lower, ", ", ci_upper, "] feet per hour\n")
+
+```
+
+So, here are the results for Irrigation Circles Problem after running the R coding:
+
+**Mean Speed:**  62.3546 feet per hour
+
+**Standard Deviation:** 3.307321 feet per hour
+
+**90% Confidence Interval:** [ 61.40931 ,  63.2999 ] feet per hour
+
+## 2.Order statistics
+
+Finding the k-th smallest or largest element in a given array.Here is following steps:
+
+1. **Choose a Pivot**: An element is randomly selected from the array to serve as the pivot. The choice of a good pivot is crucial for achieving an average time complexity of $O(n)$.
+
+2. **Partition**: The array is rearranged such that all elements less than the pivot precede it, while all greater elements follow it. This step places the pivot in its correct, sorted position.
+
+3. **Recursive Selection**: With the pivot in place:
+   - If the pivot is the k-th smallest element, the search concludes.
+   - If the pivot's position is higher than k, the search continues for the k-th smallest element in the left sub-array.
+   - If the pivot's position is lower than k, the search proceeds in the right sub-array for the k-th smallest element, adjusting k to account for the excluded left portion of the array.
+   
+4. **Termination**: The algorithm terminates when a sub-array of one element is reached, identifying the sought-after Order Statistic.
+
+### Uniform Distribution
+
+When consider the uniform distribution, denoted as $U(a,b)$. The PDF and CDF can be described as follows:
+
+1. **Probability Density Function (PDF)**: The PDF describes the likelihood that a random variable falls within a specific range of values. For a uniform distribution $U(a,b)$, the PDF is expressed as: $f(x) = \frac{1}{b-a}$, for $a \leq x \leq b$
+
+2. **Cumulative Distribution Function (CDF)**: The CDF calculates the probability that a random variable $X$ is less than or equal to a certain value $x$. For $U(a,b)$, the CDF is expressed as: $F(x) = \frac{x-a}{b-a}$, for $a \leq x \leq b$
+
+For the $k$-th order statistic $X_{(k)}$ derived from a sample of size $n$, the Probability Density Function (PDF) is expressed as: $f_{(k)}(x) = \frac{n!}{(k-1)!(n-k)!} [F(x)]^{k-1}[1 - F(x)]^{n-k} f(x)$
+
+When applying the specific CDF and PDF of the uniform distribution $U(a, b)$ to this formula, the PDF of $X_{(k)}$ is refined to:$f_{(k)}(x) = \frac{n!}{(k-1)!(n-k)!} \left(\frac{x-a}{b-a}\right)^{k-1} \left(1 - \frac{x-a}{b-a}\right)^{n-k} \frac{1}{b-a}$
+
+### Simulation and Plot of Uniform Distribution
+```{r,echo=FALSE}
+
+# Simulation parameters
+set.seed(123) # For reproducibility
+n = 1000 # Sample size
+m = 10000 # Number of simulations
+
+# Simulate order statistics
+sim_data <- replicate(m, {
+  sample <- runif(n, min = 0, max = 1)
+  sorted_sample <- sort(sample)
+  c(minimum = sorted_sample[1], 
+    quartile_1 = sorted_sample[n/4], 
+    median = median(sample), 
+    quartile_3 = sorted_sample[3*n/4], 
+    maximum = sorted_sample[n])
+})
+
+titles <- c("Minimum", "First Quartile", "Median", "Third Quartile", "Maximum")
+
+# Plot results with blue bars and red lines for the mean
+par(mfrow=c(3,2))
+for (i in 1:5) {
+  hist(sim_data[i,], main= titles[i], xlab = "Value", col = "blue", border = "white", breaks = 50)
+}
+
+```
+
+### Exponential Distribution
+
+When consider the exponential distribution with rate $\lambda$, the PDF and CDF can be described as follows:
+
+1. **Probability Density Function (PDF)**: $f(x) = \lambda e^{-\lambda x}$, for $x \geq 0$
+
+2. **Cumulative Distribution Function (CDF)**: $F(x) = 1 - e^{-\lambda x}$, for $x \geq 0$
+
+The PDF of the $k$-th order statistic $X_{(k)}$, the Probability Density Function (PDF) is expressed as: 
+
+**Probability Density Function (PDF)**: $X_{(k)}$: $f_{(k)}(x) = \frac{n!}{(k-1)!(n-k)!} [1 - e^{-\lambda x}]^{k-1} e^{-\lambda x[n-k]} \lambda e^{-\lambda x}$
+
+### Simulation and Plot of Exponential Distribution
+```{r,echo=FALSE}
+
+lambda = 1 # Rate parameter for the exponential distribution
+
+# Simulate order statistics from exponential distribution
+sim_data <- replicate(m, {
+  sample <- rexp(n, rate = lambda)
+  sorted_sample <- sort(sample)
+  c(minimum = sorted_sample[1], 
+    quartile_1 = sorted_sample[n/4], 
+    median = median(sample), 
+    quartile_3 = sorted_sample[3*n/4], 
+    maximum = sorted_sample[n])
+})
+
+titles <- c("Minimum", "First Quartile", "Median", "Third Quartile", "Maximum")
+
+# Plot results with blue bars and red lines for the mean
+par(mfrow=c(3,2))
+for (i in 1:5) {
+  hist(sim_data[i,], main= titles[i], xlab = "Value", col = "blue", border = "white", breaks = 50)
+}
+
+```
+
+### Normal Distribution
+
+When consider the normal distribution with two parameters: the mean, $u$, and the variance, $\sigma^2$. , the PDF and CDF can be described as follows:
+
+1. **Probability Density Function (PDF)**: $f(x) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{1}{2} \left(\frac{x-\mu}{\sigma}\right)^2}$ 
+2. **Cumulative Distribution Function (CDF)**: Although CDF for the normal distribution cannot be articulated through elementary functions, it is nonetheless thoroughly defined and symbolized by the $\Phi$ function in the case of the standard normal distribution. The goal of the CDF is to measure the probability that a given random variable $X$ will assume a value less than or equal to some specified value $x$.
+
+### Simulation and Plot of Normal Distribution
+```{r,echo=FALSE}
+
+mu = 0 # Mean of the normal distribution
+sigma = 1 # Standard deviation of the normal distribution
+
+# Simulate order statistics from normal distribution
+sim_data <- replicate(m, {
+  sample <- rnorm(n, mean = mu, sd = sigma)
+  sorted_sample <- sort(sample)
+  c(minimum = sorted_sample[1], 
+    quartile_1 = sorted_sample[round(n/4)], 
+    median = median(sample), 
+    quartile_3 = sorted_sample[round(3*n/4)], 
+    maximum = sorted_sample[n])
+})
+
+# Define a function to plot histograms with adjusted ranges and add a mean line
+plot_hist_with_mean <- function(data, main) {
+  range_x <- range(data, na.rm = TRUE)
+  # Ensure at least some spread in data to avoid division by zero in 'breaks'
+  spread <- max(1e-6, diff(range_x)/30)
+  hist(data, main = main, xlab = "Value", col = "blue", border = "white",
+       breaks = seq(from = range_x[1], to = range_x[2], by = spread),
+       xlim = range_x)
+}
+
+# Plot results with blue bars and red lines for the mean
+par(mfrow=c(3,2))
+titles <- c("Minimum", "First Quartile", "Median", "Third Quartile", "Maximum")
+for (i in 1:5) {
+  plot_hist_with_mean(sim_data[i,], titles[i])
+}
+
+```
+
+## 3.Markov Chain
+
+Markov Chain is mathematical system of transitions from one state to another on a state space, which is used to model stochastic systems that obey a defined set of rules in the current state. In the field of genetics, Markov chain is able to model sequences of alleles (different forms of genes) that change over generations as a means of predicting, under certain assumptions, the genetic makeup of future generations.
+
+### Application in Genetics using Markov Chain
+
+Consider modeling the evolution of genomic sequences over time under the influence of both mutation and natural selection.This application I select will incorporate a more detailed scenario where the probabilities of mutation between nucleotides (A, C, G, T) depend on the current state of a sequence and its fitness landscape, which in turn influences the selection process.
+
+A to A: 0.9, A to C: 0.03, A to G: 0.05, A to T: 0.02
+
+C to A: 0.04, C to C: 0.85, C to G: 0.05, C to T: 0.06
+
+G to A: 0.01, G to C: 0.03, G to G: 0.94, G to T: 0.02
+
+T to A: 0.02, T to C: 0.07, T to G: 0.01, T to T: 0.9
+
+Each sequence has a fitness value. Sequences with higher fitness are more likely to be passed on to the next generation. For simplicity, assign a fitness value to each nucleotide, e.g., A: 1.0, C: 1.2, G: 0.
+
+The plot is a good visual representation of the Markov chain simulation of nucleotide changes over time, with colored blocks indicating the state of the nucleotide at each generation.
+
+```{r,echo=FALSE}
+
+states <- c("A", "C", "G", "T")
+mutationMatrix <- matrix(c(
+  0.9, 0.03, 0.05, 0.02,
+  0.04, 0.85, 0.05, 0.06,
+  0.01, 0.03, 0.94, 0.02,
+  0.02, 0.07, 0.01, 0.9
+), byrow = TRUE, nrow = 4, dimnames = list(states, states))
+
+fitnessValues <- c(A = 1.0, C = 1.2, G = 0.8, T = 1.1)
+
+adjustForFitness <- function(matrix, fitness) {
+  adjustedMatrix <- matrix
+  for (i in 1:nrow(matrix)) {
+    for (j in 1:ncol(matrix)) {
+      adjustedMatrix[i, j] <- matrix[i, j] * fitness[names(fitness)[j]]
+    }
+    adjustedMatrix[i, ] <- adjustedMatrix[i, ] / sum(adjustedMatrix[i, ])
+  }
+  return(adjustedMatrix)
+}
+
+adjustedMatrix <- adjustForFitness(mutationMatrix, fitnessValues)
+mcOriginal <- new("markovchain", states = states, byrow = TRUE, transitionMatrix = mutationMatrix, name = "Original")
+mcAdjusted <- new("markovchain", states = states, byrow = TRUE, transitionMatrix = adjustedMatrix, name = "Adjusted")
+
+heatmapOriginal <- melt(mutationMatrix)
+names(heatmapOriginal) <- c("From", "To", "Probability")
+ggplot(heatmapOriginal, aes(x = To, y = From, fill = Probability)) + 
+  geom_tile() + 
+  scale_fill_gradient(low = "blue", high = "red") + 
+  ggtitle("Original Mutation Matrix") + 
+  xlab("To State") + ylab("From State")
+
+heatmapAdjusted <- melt(adjustedMatrix)
+names(heatmapAdjusted) <- c("From", "To", "Probability")
+ggplot(heatmapAdjusted, aes(x = To, y = From, fill = Probability)) + 
+  geom_tile() + 
+  scale_fill_gradient(low = "blue", high = "red") + 
+  ggtitle("Adjusted Mutation Matrix") + 
+  xlab("To State") + ylab("From State")
+
+fitnessDF <- as.data.frame(t(fitnessValues))
+fitnessDF <- data.frame(State = names(fitnessValues), Fitness = as.numeric(fitnessValues))
+
+#colnames(fitnessDF) <- c("Fitness") 
+#fitnessDF$State <- rownames(fitnessDF)
+ggplot(fitnessDF, aes(x = State, y = Fitness, fill = State)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Fitness Values") +
+  xlab("State") + ylab("Fitness")
+
+set.seed(123)
+initialState <- "A"
+evolvedSequence <- rmarkovchain(n = 20, object = mcAdjusted, t0 = initialState)
+
+print(evolvedSequence)
+
+```
+
