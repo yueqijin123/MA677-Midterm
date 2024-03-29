@@ -1,0 +1,8 @@
+"0",""
+"0","heatmapAdjusted <- melt(adjustedMatrix)"
+"0","names(heatmapAdjusted) <- c(""From"", ""To"", ""Probability"")"
+"0","ggplot(heatmapAdjusted, aes(x = To, y = From, fill = Probability)) + "
+"0","  geom_tile() + "
+"0","  scale_fill_gradient(low = ""blue"", high = ""red"") + "
+"0","  ggtitle(""Adjusted Mutation Matrix"") + "
+"0","  xlab(""To State"") + ylab(""From State"")"

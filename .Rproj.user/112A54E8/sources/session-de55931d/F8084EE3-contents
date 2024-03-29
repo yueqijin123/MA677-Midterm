@@ -1,0 +1,34 @@
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Define number of simulations and sample size
+simulations <- 10000
+sample_size <- 5
+rate <- 1 # Rate parameter for the exponential distribution
+
+# Simulate order statistics for an exponential distribution
+order_statistics <- matrix(rexp(simulations * sample_size, rate), ncol = sample_size)
+sorted_order_statistics <- t(apply(order_statistics, 1, sort))
+
+# Define the plot file names
+plot_files <- paste0("exponential_order_statistic_", 1:sample_size, ".png")
+
+# Create and save a plot for each order statistic
+for (i in 1:sample_size) {
+  # Open a PNG device
+  png(filename = plot_files[i], width = 800, height = 600)
+  
+  # Histogram of the i-th order statistic
+  hist(sorted_order_statistics[, i], probability = TRUE, main = paste("Order Statistic", i),
+       xlab = "Value", col = "lightblue", border = "white", ylim = c(0, 2), xlim = c(0, quantile(sorted_order_statistics[, i], 0.99)))
+  
+  # Overlay the exponential distribution density curve
+  curve(dexp(x, rate), add = TRUE, col = "darkblue", lwd = 2)
+  
+  # Close the PNG device
+  dev.off()
+}
+
+# Return the names of the plot files
+plot_files

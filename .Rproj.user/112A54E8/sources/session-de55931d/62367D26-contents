@@ -1,0 +1,25 @@
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Define number of simulations and sample size
+simulations <- 10000
+sample_size <- 5
+
+# Simulate order statistics for a uniform distribution
+order_statistics <- matrix(runif(simulations * sample_size), ncol = sample_size)
+sorted_order_statistics <- t(apply(order_statistics, 1, sort))
+
+# Create a plot for each order statistic
+par(mfrow = c(3, 2))  # Set up the plotting area to display 5 plots
+for (i in 1:sample_size) {
+  # Histogram of the i-th order statistic
+  hist(sorted_order_statistics[, i], probability = TRUE, main = paste("Order Statistic", i),
+       xlab = "Value", col = "skyblue", border = "white", ylim = c(0, 2.5), xlim = c(0, 1))
+  
+  # Overlay the theoretical beta distribution density curve
+  curve(dbeta(x, i, sample_size - i + 1), add = TRUE, col = "darkblue", lwd = 2)
+}
+
+# Reset plotting area
+par(mfrow = c(1, 1))
